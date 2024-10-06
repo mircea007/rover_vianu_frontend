@@ -48,3 +48,10 @@
 .recharts-wrapper {
   margin-top: 2rem;
 }
+
+.button-res {
+
+  background-color: red;
+  border-radius: 50%;
+
+}

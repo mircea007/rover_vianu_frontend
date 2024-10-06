@@ -3,61 +3,195 @@ import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
+
+import { ReactComponent as ArrowUp } from './arrow-up.svg';
+import { ReactComponent as ArrowDown } from './arrow-down.svg';
+import { ReactComponent as ArrowLeft } from './arrow-left.svg';
+import { ReactComponent as ArrowRight } from './arrow-right.svg';
+import { ReactComponent as CloseBtn } from './close.svg';
+
+import styles from './App.css';
+
 //import { LineChart, XAxis, Tooltip, CartesianGrid, Line, YAxis, Legend } from "recharts";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState } from "react";
+
 const axios = require("axios").default;
+
 //const ip = "http://172.20.10.4:8080";
-const ip = "http://192.168.176.34:8080";
+//const ip = "http://172.16.1.165:8080";
+const ip = "http://192.168.29.34:8080"
 
 function App() {
+
+    //hover state bc why not bro ...
+
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.position = 'relative';
+    document.body.style.height = '100vh';
+
+    const [isHover, setIsHover] = useState(false);
+
+    const handleMouseEnter = () => {
+        setIsHover(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHover(false);
+    };
+
+    const html = {
+
+        backgroundColor: 'red',
+        position: 'relative',
+        margin: '0',
+        padding: '0',
+        height: '100vh'
+
+    }
+
+    const controller = {
+
+        position: 'fixed',
+        bottom: '0',
+        //right: '0',
+        left: '0',
+        paddingBottom: '10px',
+        zIndex: '1000'
+
+    }
+
+    const controller2 = {
+
+        position: 'fixed',
+        bottom: '0',
+        //right: 'right',
+        right: '0',
+        paddingBottom: '10px',
+        zIndex: '1000'
+
+    }
+
+    const btnConsole = {
+
+        //color: 'white',
+        backgroundColor: 'white',
+        transition: 'all .5s',
+        opacity: isHover ? '1' : '0.5',
+        borderRadius: '50%',
+        borderColor: 'white',
+        // padding: '1px 20px',
+        //heigth: '50px',
+        //width: '50px',
+        padding: '0px',
+        marginRigth: 'auto',
+        marginLeft: 'auto'
+
+    }
+
+    const svgsize = {
+        // width: '60px',
+        // heigth: '60px',
+        margin: '0px auto'
+    }
+
     let cnt = 0;
+
     const [data, setData] = useState([]);
     const [add, setAdd] = useState(0);
     const [unghi, setUnghi] = useState(0);
+
+    const [dataTemp, setDataTemp] = useState([]);
+    const [dataPres, setDataPres] = useState([]);
+    const [dataHum, setDataHum] = useState([]);
+
+    const [dataInv, setDataInv] = useState([]);
+
+    const randNum = () => {
+
+        return Math.round(Math.random() * 1000 + 1);
+
+    }
+
+    // function dataParasite() {
+
+    //     dataInv.push({
+    //         name: `${add}`,
+    //         "CH4": randNum(),
+    //         "H2": randNum(),
+    //         "NH3": randNum(),
+    //         "Temperature": randNum(),
+    //         "Pressure": randNum(),
+    //         "Humidity": randNum()
+    //     })
+
+    //     console.log(dataInv)
+
+    //     setDataInv(dataInv);
+
+    //     setAdd(add => add + 1);
+
+    // }
+
     function addResponseToData(response) {
-        let start = response.indexOf("mq8 = ");
-        start += 7;
-        let number = 0;
-        while (response[start] >= '0' && response[start] <= '9') {
-            number = number * 10 + response[start] - '0';
-            start++;
-        }
-        let mq8 = number;
 
-        // 
-        start = response.indexOf("mq4 = ");
-        start += 7;
-        number = 0;
-        while (response[start] >= '0' && response[start] <= '9') {
-            number = number * 10 + response[start] - '0';
-            start++;
-        }
-        let mq4 = number;
+        const response_string = JSON.parse(response).data;
 
+        const words = response_string.split(/\s+/);
 
+        let response_map = {};
+        for (let i = words.indexOf('|') + 1; i < words.length; i += 3)
+            response_map[words[i]] = words[i + 2];
 
-        data.push({ name: `${add}`, uv: mq4, pv: mq8 });
-
+        data.push({
+            name: `${add}`,
+            "CH4": response_map['mq4'],
+            "H2": response_map['mq8'],
+            "NH3": response_map['mq135']
+        });
         setData(data);
+
+        dataTemp.push({
+            name: `${add}`,
+            "Temperature": response_map['temperature']
+        });
+        setDataTemp(dataTemp);
+
+        dataPres.push({
+            name: `${add}`,
+            "Pressure": response_map['pressure']
+        });
+        setDataPres(dataPres);
+
+        dataHum.push({
+            name: `${add}`,
+            "Humidity": response_map['humidity']
+        });
+        setDataHum(dataHum);
 
         setAdd(add => add + 1);
 
-        console.log(data);
+
     }
+
     function handleFront() {
-        //console.log("OP")
+        console.log("OP")
         axios.get(ip + "/move/fata").then(function (response) {
             console.log(response);
             addResponseToData(JSON.stringify(response));
         });
+
+        //dataParasite();
     }
+
     function handleBack() {
         axios.get(ip + "/move/spate").then(function (response) {
             console.log(response);
             addResponseToData(JSON.stringify(response));
         });
     }
+
     function handleLeft() {
         axios.get(ip + "/move/stanga").then(function (response) {
             console.log(response);
@@ -82,16 +216,16 @@ function App() {
         setUnghi(0);
     }
     function handleOpen() {
-        console.log(data);
+        // console.log(data);
         axios.get(ip + "/gheara/open").then(function (response) {
             console.log(response);
-            addResponseToData(response);
+            addResponseToData(JSON.stringify(response));
         });
     }
     function handleClose() {
         axios.get(ip + "/gheara/close").then(function (response) {
             console.log(response);
-            addResponseToData(response);
+            addResponseToData(JSON.stringify(response));
         });
     }
     function handleFront_power() {
@@ -123,102 +257,75 @@ function App() {
         });
     }
 
-    const Data = [
-        {
-            name: 'Page A',
-            uv: 4000,
-            pv: 2400,
-            amt: 2400,
-        },
-        {
-            name: 'Page B',
-            uv: 3000,
-            pv: 1398,
-            amt: 2210,
-        },
-        {
-            name: 'Page C',
-            uv: 2000,
-            pv: 9800,
-            amt: 2290,
-        },
-        {
-            name: 'Page D',
-            uv: 2780,
-            pv: 3908,
-            amt: 2000,
-        },
-        {
-            name: 'Page E',
-            uv: 1890,
-            pv: 4800,
-            amt: 2181,
-        },
-        {
-            name: 'Page F',
-            uv: 2390,
-            pv: 3800,
-            amt: 2500,
-        },
-        {
-            name: 'Page G',
-            uv: 3490,
-            pv: 4300,
-            amt: 2100,
-        },
-    ];
-
     return (
-        <Container className="mt-5">
+        <Container className="m-0">
 
 
 
             {/* //<title>My Leaflet Routing Machine Example</title> */}
-            <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+            < link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
             <link rel="stylesheet" href="LeafletRoutingMachine/dist/leaflet-routing-machine.css" />
             <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" />
             <link rel="stylesheet" href="css/easy-button.css" />
 
 
-            <Row>
-                <Col md={12} style={{ width: "100%" }} className="mb-3">
-                    <Button block onClick={handleFront}>
-                        {" "}
-                        Sus{" "}
-                    </Button>
-                </Col>
-                <Col md={4} className="mb-3">
-                    <Button block onClick={handleLeft} className="btn-warning">
-                        Stanga{" "}
-                    </Button>
-                </Col>
-                <Col md={4} className="mb-3">
-                    <Button block onClick={handleCenter} className="btn-danger">
-                        Centru{" "}
-                    </Button>
-                </Col>
-                <Col md={4} className="mb-3">
-                    <Button block className="btn-warning" onClick={handleRight}>
-                        Dreapta
-                    </Button>
-                </Col>
-                <Col md={12} className="mb-5">
-                    <Button block onClick={handleBack}>
-                        Jos
-                    </Button>
-                </Col>
-                <Col md={6} className="mt-5">
-                    <Button onClick={handleOpen} block>
-                        Open
-                    </Button>
-                </Col>
-                <Col md={6} className="mt-5">
-                    <Button onClick={handleClose} block>
-                        Close
-                    </Button>
-                </Col>
 
-                <Col md={6} className="mt-5">
+            {/* <Row> */}
+            <Container style={controller} className="w-25">
+                <Row>
+                    <Col xs={12} className="p-0" align='center'>
+                        <Button style={btnConsole} onClick={handleFront} onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <ArrowUp style={svgsize} />
+                        </Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col xs={6} className="p-0" align='center'>
+                        <Button style={btnConsole} onClick={handleLeft} className="btn-warning" onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <ArrowLeft style={svgsize} />
+                        </Button>
+                    </Col>
+
+                    <Col xs={6} className="p-0" align='center'>
+                        <Button style={btnConsole} className="btn-warning" onClick={handleRight} onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <ArrowRight style={svgsize} />
+                        </Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col xs={12} className="p-0" align='center'>
+                        <Button style={btnConsole} onClick={handleBack} onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <ArrowDown style={svgsize} />
+                        </Button>
+                    </Col>
+                </Row>
+            </Container>
+
+            <Container className="w-25" style={controller2}>
+                <Row>
+
+                    <Col xs={6} className="p-0 mt-5" align="left">
+                        <Button style={btnConsole} onClick={handleOpen} onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <CloseBtn style={svgsize} />
+                        </Button>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col xs={6} className="p-0 mt-5" align="left">
+                        <Button style={btnConsole} onClick={handleClose} onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}>
+                            <CloseBtn style={svgsize} />
+                        </Button>
+                    </Col>
+                </Row>
+            </Container>
+
+            {/* <Col md={6} className="mt-5">
                     <Button onClick={handleFront_power} block>
                         FataTesla
                     </Button>
@@ -227,8 +334,8 @@ function App() {
                     <Button onClick={handleBack_power} block>
                         SpateTesla
                     </Button>
-                </Col>
-                <Col md={12}>
+                </Col> */}
+            {/* <Col md={12}>
                     <h1>{unghi}</h1>
                 </Col>
                 <Col md={6} className="mt-5">
@@ -240,44 +347,145 @@ function App() {
                     <Button onClick={dealSpate} block>
                         SpateDeal
                     </Button>
-                </Col>
-            </Row>
+                </Col> */}
+            {/* </Row> */}
 
 
             {/* // <ResponsiveContainer width="100%" height="100%"> */}
-            <>
-                <LineChart
-                    key={add}
-                    className="mt-5"
-                    width={1000}
-                    height={600}
-                    data={data}
-                    margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                    }}
+            <div style={{ width: '100%', height: 500 }}>
+                <ResponsiveContainer>
+                    <LineChart
+                        key={add}
+                        className="mt-5"
+                        width={500}
+                        height={500}
+                        data={data}
+                        margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                        }}
 
-                >
+                    >
 
-                    <CartesianGrid className="da" strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-                    <Line type="monotone" dataKey="pv" stroke="#82ca9d" />
-                    <h1>{add}</h1>
-                </LineChart>
-
+                        <CartesianGrid className="da" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="CH4" stroke="#8884d8" fill="#8884d8" />
+                        <Line type="monotone" dataKey="H2" stroke="#82ca9d" fill="#8884d8" />
+                        <Line type="monotone" dataKey="NH3" stroke="#ff0000" fill="#8884d8" />
+                        <h1>{add}</h1>
+                    </LineChart>
+                </ResponsiveContainer>
                 <h1>{add}</h1>
 
                 {/* //</ResponsiveContainer> */}
 
-            </>
+            </div>
 
-        </Container>
+            <div style={{ width: '100%', height: 500 }}>
+                <ResponsiveContainer>
+                    <LineChart
+                        key={add}
+                        className="mt-5"
+                        width={500}
+                        height={500}
+                        data={dataTemp}
+                        margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                        }}
+
+                    >
+
+                        <CartesianGrid className="da" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="Temperature" stroke="#8884d8" fill="#8884d8" />
+
+                        <h1>{add}</h1>
+                    </LineChart>
+                </ResponsiveContainer>
+                <h1>{add}</h1>
+
+                {/* //</ResponsiveContainer> */}
+
+            </div>
+
+            <div style={{ width: '100%', height: 500 }}>
+                <ResponsiveContainer>
+                    <LineChart
+                        key={add}
+                        className="mt-5"
+                        width={500}
+                        height={500}
+                        data={dataPres}
+                        margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                        }}
+
+                    >
+
+                        <CartesianGrid className="da" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="Pressure" stroke="#8884d8" fill="#8884d8" />
+
+                        <h1>{add}</h1>
+                    </LineChart>
+                </ResponsiveContainer>
+                <h1>{add}</h1>
+
+                {/* //</ResponsiveContainer> */}
+
+            </div>
+
+            <div style={{ width: '100%', height: 500 }}>
+                <ResponsiveContainer>
+                    <LineChart
+                        key={add}
+                        className="mt-5"
+                        width={500}
+                        height={500}
+                        data={dataHum}
+                        margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                        }}
+
+                    >
+
+                        <CartesianGrid className="da" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="Humidity" stroke="#8884d8" fill="#8884d8" />
+
+                        <h1>{add}</h1>
+                    </LineChart>
+                </ResponsiveContainer>
+                <h1>{add}</h1>
+
+                {/* //</ResponsiveContainer> */}
+
+            </div>
+
+        </Container >
 
     );
 }
